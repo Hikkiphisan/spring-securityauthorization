@@ -5,12 +5,9 @@ import org.example.sptingsecurityauthorizationaaa.model.Role;
 import org.example.sptingsecurityauthorizationaaa.model.User;
 import org.example.sptingsecurityauthorizationaaa.model.UserPrinciple;
 import org.example.sptingsecurityauthorizationaaa.model.dto.UserDTO;
-import org.example.sptingsecurityauthorizationaaa.repository.IUserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -18,46 +15,75 @@ import java.util.*;
 @Service
 public class UserService implements UserDetailsService {
 
+    public static List<User> listUser = new ArrayList<>();
+    public static List<Role> listRole = new ArrayList<>();
 
-    @Autowired
-    private IUserRepository iUserRepository;
+    public UserService() {
+        listRole.add(new Role(1L, "ROLE_ADMIN"));
+        listRole.add(new Role(2L, "ROLE_USER"));
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+        String password = "$2a$10$xMq9EwZvdKUuvgiaM2T1Iuw9A1EGXVZaCIUPEwn1Isa9ffvPqNabe";
+        User userKai = new User(1L, "kai", password);
+        Set<Role> roleKai = new HashSet<>();
+        roleKai.add(listRole.get(0));
+        userKai.setRoles(roleKai);
 
+
+
+        User userSena = new User(2L, "sena", password);
+        Set<Role> roleSena = new HashSet<>();
+        roleSena.add(listRole.get(1));
+        userSena.setRoles(roleSena);
+
+        listUser.add(userKai);
+        listUser.add(userSena);
+    }
 
     public List<UserDTO> findAll() {
         List<UserDTO> userDTOS = new ArrayList<>();
-        for (User u : iUserRepository.findAll()) {
+        for (User u : listUser) {
             userDTOS.add(toDTO(u));
         }
         return userDTOS;
     }
+
     public UserDTO findById(Long id) {
-        Optional<User> user = iUserRepository.findById(id);
-        return user.map(this::toDTO).orElse(null);
+        for (User user : listUser) {
+            if (Objects.equals(user.getId(), id)) {
+                return toDTO(user);
+            }
+        }
+        return null;
     }
 
     public User findByUsername(String username) {
-        return iUserRepository.findByUsername(username);
+        for (User user : listUser) {
+            if (Objects.equals(user.getUsername(), username)) {
+                return user;
+            }
+        }
+        return null;
     }
 
     public boolean add(User user) {
-        String passwordEncode = passwordEncoder.encode(user.getPassword());
-        user.setPassword(passwordEncode);
-        iUserRepository.save(user);
+        for (User userExist : listUser) {
+            if (Objects.equals(user.getId(), userExist.getId()) || Objects.equals(user.getUsername(), userExist.getUsername())) {
+                return false;
+            }
+        }
+        listUser.add(user);
         return true;
     }
-    public void delete(Long id) {
-        iUserRepository.deleteById(id);
+
+    public void delete(int id) {
+        listUser.removeIf(user -> user.getId() == id);
     }
 
-
-
     public UserDetails loadUserByUsername(String username) {
-        User user = iUserRepository.findByUsername(username);
-        if (user != null) {
-            return UserPrinciple.build(user);
+        for (User user : listUser) {
+            if (Objects.equals(user.getUsername(), username)) {
+                return UserPrinciple.build(user);
+            }
         }
         return null;
     }
