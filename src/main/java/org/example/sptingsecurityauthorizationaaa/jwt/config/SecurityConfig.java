@@ -63,6 +63,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.httpBasic().authenticationEntryPoint(restServicesEntryPoint());
         http.authorizeHttpRequests()
                 .requestMatchers("/api/login").permitAll()
+
+                // Quyền truy cập GET: Chỉ ADMIN có thể truy cập thông tin sản phẩm
+                .requestMatchers(HttpMethod.GET, "/api/products/**").hasRole("ADMIN")
+
                 .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole(new String[]{"ADMIN", "USER"})
                 .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN")
